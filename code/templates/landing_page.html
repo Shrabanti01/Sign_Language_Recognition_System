@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Recognition System</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: rgb(59, 89, 110);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #fff;
+            opacity: 0;
+            animation: fadeIn 1s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            margin: auto;
+            background-color: transparent;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+
+        header {
+            background-color: transparent;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: white; /* New color */
+            margin: 0;
+        }
+
+        #videoContainer {
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 80%;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        #startDetectionBtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease-in-out;
+            margin-top: 20px;
+        }
+
+        #startDetectionBtn:hover {
+            background-color: #45a049;
+        }
+
+        .instruction-text {
+            margin-top: 20px;
+            font-size: 18px;
+            
+        }
+
+        .gifs-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            animation: fadeInUp 1s ease-in-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .gif-container {
+            text-align: center;
+        }
+
+        .gif {
+            width: 150px;
+            height: 150px; /* Set the height to match the width for a square shape */
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            margin: 10px;
+        }
+
+        .gif-text {
+            color: #fff; /* Highlighted text color */
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Sign Language Recognition System</h1>
+        </header>
+
+        <div class="gifs-container">
+            <div class="gif-container">
+                <img class="gif" src="{{url_for('static', filename='image/shuvo.gif')}}" alt="Shuvo Sign">
+                <p class="gif-text">শুভ</p>
+            </div>
+            <div class="gif-container">
+                <img class="gif" src="{{url_for('static', filename='image/sokal.gif')}}" alt="Sokal Sign">
+                <p class="gif-text">সকাল</p>
+            </div>
+            <div class="gif-container">
+                <img class="gif" src="{{url_for('static', filename='image/apni.gif')}}" alt="Apni Sign">
+                <p class="gif-text">আপনি</p>
+            </div>
+            <div class="gif-container">
+                <img class="gif" src="{{url_for('static', filename='image/kemon.gif')}}" alt="Kemon Sign">
+                <p class="gif-text">কেমন</p>
+            </div>
+            <div class="gif-container">
+                <img class="gif" src="{{url_for('static', filename='image/achen.gif')}}" alt="Achen Sign">
+                <p class="gif-text">আছেন</p>
+            </div>
+        </div>
+
+        <button id="startDetectionBtn" onclick="startDetection()">Start Detection</button>
+        <br>
+        
+        <div class="instruction-text">
+            <p>Welcome to our Sign Language Recognition website!</p>
+            <p>This platform can recognize sign language gestures and provide corresponding text.</p>
+            <p>Follow the instructions in the video to make the correct signs.</p>
+        </div>
+    </div>
+
+    <script>
+        function startDetection() {
+            window.location.href = "/detection"; // Redirect to the detection page
+        }
+    </script>
+</body>
+
+</html>

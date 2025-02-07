@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/handtrackjs@1.4.0/dist/handtrackjs.min.js"></script>
+        <title>Webcam Streaming, Image Upload, and Pose Prediction</title>
+    
+   <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .container {
+        text-align: center;
+    }
+
+    .video-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5.5px;
+    }
+
+    video.input_video {
+        width: 48%;
+        border: 0.2px solid #3498db;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    canvas.output_canvas {
+        width: 48%;
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    #output {
+        background-color: #fff;
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        overflow: auto;
+    }
+    #startAgainBtn {
+        display: none;
+        margin: 20px auto 20px;
+
+    }
+    
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <div class="video-container">
+            <video id="webcam" class="input_video" width="640" height="480" autoplay></video>
+            <canvas class="output_canvas" width="640" height="380"></canvas>
+        </div>
+        <div id="output" style="margin-top: 10px;"></div>
+        <video id="webcam" width="720" height="20" autoplay></video>
+    
+        <div id="responseContainer"></div>
+        <button id="stopAndShowBtn">Show Final Output</button>
+        <button id="startAgainBtn">Start Again</button>
+
+    </div>
+
+    <script type="module">
+
+
+        const responseArray = [];
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementsByClassName('output_canvas')[0];
+        const canvasCtx = canvasElement.getContext('2d');
+
+        const stopAndShowBtn = document.getElementById('stopAndShowBtn');
+        stopAndShowBtn.addEventListener('click', () => {
+            showFinalOutput();
+        });
+        const startAgainBtn = document.getElementById('startAgainBtn');
+
+        startAgainBtn.addEventListener('click', () => {
+            refreshPage();
+        });
+
+        function refreshPage() {
+            location.reload();
+        }
+
+
+        function showFinalOutput() {
+            console.log("Clicked");
+            const outputDiv = document.getElementById('output');
+            const responseContainer = document.getElementById('responseContainer');
+            const uniqueSentences = new Set(responseArray);
+        
+            // Convert the Set back to an array if needed
+            const uniqueSentencesArray = Array.from(uniqueSentences);
+        
+            // Join the sentences without quotations and square brackets
+            const finalOutput = uniqueSentencesArray.map(sentence => sentence.replace(/["[\]]/g, '')).join('');
+        
+            // Display the unique sentences
+            outputDiv.innerHTML = `<p>Final Output:</p><pre style="white-space: pre-wrap; word-wrap: break-word; display: inline;">${finalOutput}</pre>`;
+            startAgainBtn.style.display = 'block';
+            setTimeout(() => {
+                outputDiv.innerHTML = '';
+            }, 50000);
+        }
+        
+        
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                        {color: '#00FF00', lineWidth: 5});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 2});
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480
+        });
+        camera.start();
+
+        hands.onResults(onResults);
+
+        // Get webcam access
+        let webcamStream;
+        let imageSent = false;
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                const video = document.getElementById('webcam');
+                video.srcObject = stream;
+                webcamStream = stream;
+                // Capture an image every second
+                if(imageSent==false){
+                    setInterval(() => captureImage(video), 5000);
+                }
+            })
+            .catch((error) => console.error('Error accessing webcam:', error));
+
+        // Function to capture image and send to the server
+        
+        function captureImage(video) {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas content to base64 data URL
+            const imageDataUrl = canvas.toDataURL('image/jpeg');
+
+            if(imageSent==false){
+                console.log("2");
+                // Send the image to the server
+                sendImageToServer(imageDataUrl,true);
+                
+            }
+
+          
+        }
+
+        // Function to send the image data to the server
+        function sendImageToServer(imageDataUrl,imagesent) {
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageDataUrl,imageSent:imagesent }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Corresponding word:', data);
+                console.log("3");
+
+                // Display the output on the webpage
+                const outputDiv = document.getElementById('output');
+                const responseText = JSON.stringify(data.output, null, 2);
+                
+                const formattedResponse = responseText.split(/\s+/).slice(0, 25).join(' ');
+                outputDiv.innerHTML = `<p>Corresponding word:</p><pre style="white-space: pre-wrap; word-wrap: break-word;">${formattedResponse}</pre>`;
+
+                imageSent = data.imageSent; 
+                responseArray.push(responseText);
+                // Reset the flag after receiving the server response
+            })
+            .catch(error => console.error('Error sending image to server:', error));
+        }
+
+        function stopWebcam() {
+            if (webcamStream) {
+                const tracks = webcamStream.getTracks();
+                tracks.forEach(track => track.stop());
+                const video = document.getElementById('webcam');
+                video.srcObject = null;
+                video.pause();
+                camera.off();
+                
+                
+            }
+        }
+        if(imageSent==false){
+            setInterval(() => captureImage(videoElement), 10000);
+        }
+        
+    </script>
+</body>
+</html>
